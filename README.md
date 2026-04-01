@@ -1,4 +1,4 @@
-# ⚡ EV Charging Station Network System (Ongoing)
+# ⚡ EV Charging Station Network System
 
 > An Electric Vehicle (EV) Charging Network platform modeled with Object-Oriented Design (OOD) principles and modern design patterns, featuring IoT-enabled real-time monitoring, a comprehensive reservation system, and a smart payment infrastructure.
 
