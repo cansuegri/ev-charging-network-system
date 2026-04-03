@@ -69,4 +69,4 @@ Detailed operational flows have been modeled for the following processes to ensu
 [ ] IoT Sensor Data Simulation
 
 ---
-Developers: Yaprak Chantimur & Cansu Eğri & Aleyna Aytan
+Developers: Yaprak Cihantimur & Cansu Eğri & Aleyna Aytan
