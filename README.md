@@ -53,7 +53,7 @@ Detailed operational flows have been modeled for the following processes to ensu
 ## 🗂️ Repository Structure
 
 ```text
-├── images/                 # Exported diagrams (Use Case, Class, ER)
+├── images/                 # Exported diagrams (Use Case, Class, ER, Sequence)
 ├── vp-source/              # Original .vpp Visual Paradigm source files
 └── README.md
 ```
