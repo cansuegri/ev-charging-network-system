@@ -12,7 +12,7 @@ The system manages interactions between EV Owners, System Administrators, and Io
 
 ## 🏗️ System Architecture & Design Patterns
 The system is heavily modeled around core OOP principles and utilizes several software design patterns to ensure scalability and maintainability:
-* **State Pattern:** Used to manage the dynamic states of charging sockets (`AVAILABLE`, `OCCUPIED`, `RESERVED`, `FAULTY`).
+* **State Pattern:** Used to manage the dynamic states of charging sockets (`AVAILABLE`, `OCCUPIED`, `RESERVED`, `FAULTY`, `MAINTENANCE`).
 * **Strategy Pattern:** Implemented in the payment module to seamlessly swap between different payment methods (Credit Card, Wallet, etc.).
 * **Observer Pattern:** Utilized for real-time IoT sensor communication, notifying users instantly about vehicle detection or charging progress.
 
