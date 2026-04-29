@@ -16,7 +16,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: const Color(0xFF101010),
       body: Stack(
         children: [
-          // 1. ARKA PLANDAKİ HAFİF SARI IŞIK (Hata düzeltildi)
+          // 1. ARKA PLANDAKİ HAFİF SARI IŞIK
           Positioned(
             top: -100,
             right: -50,
@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                // blurRadius boxShadow içine taşındı, hata artık yok
+                // blurRadius boxShadow içine taşındı
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFFF4D06F).withOpacity(0.05),
@@ -45,17 +45,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // GERİ DÖNÜŞ BUTONU
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 20),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  
                   const SizedBox(height: 15),
                   _buildLogoSection(),
                   const SizedBox(height: 40),
@@ -97,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // --- Yardımcı Metotlar (Yapı Korundu) ---
+  // --- Yardımcı Metotlar ---
 
   Widget _buildLogoSection() => Row(
     mainAxisAlignment: MainAxisAlignment.center,

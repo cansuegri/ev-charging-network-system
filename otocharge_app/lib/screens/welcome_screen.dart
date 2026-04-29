@@ -13,7 +13,7 @@ class WelcomeScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 10),
             
-            // 1. Üstteki Görsel Kartı (Logo silindi, sadece görsel kaldı)
+            // 1. Üstteki Görsel Kartı
             Expanded(
               flex: 5,
               child: Container(

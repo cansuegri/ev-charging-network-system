@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-// 1. DÜZELTME: Import eksik olduğu için RegisterScreen tanınmıyordu.
 import 'welcome_screen.dart'; 
-import 'register_screen.dart'; // Bu satırı ekledik
+import 'register_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -156,7 +155,7 @@ class LoginScreen extends StatelessWidget {
                   const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
                   GestureDetector(
                     onTap: () {
-                      // 2. DÜZELTME: 'const' kaldırıldı, sınıf ismi RegisterScreen olarak eşlendi.
+                      //sınıf ismi RegisterScreen olarak eşlendi.
                       Navigator.push(
                         context, 
                         MaterialPageRoute(builder: (context) => RegisterScreen()) 
