@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "310374252610",
+    "project_id": "sparkyotochargeapp",
+    "storage_bucket": "sparkyotochargeapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:310374252610:android:25c3f5f44ddd4389f22ddb",
+        "android_client_info": {
+          "package_name": "com.example.otocharge_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAelN8Mg5bnAmb56QxzAcODx8VB51lVbKU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

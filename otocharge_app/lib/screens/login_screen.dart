@@ -1,9 +1,82 @@
 import 'package:flutter/material.dart';
+import 'package:otocharge_app/screens/home_screen.dart';
 import 'welcome_screen.dart'; 
 import 'register_screen.dart';
+import '../services/auth_service.dart';
+import 'explore_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  // Kullanıcının yazdığı metinleri tutacak değişkenler (Controller)
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  
+  // Firebase işlemlerini yapacak servisimiz
+  final AuthService _authService = AuthService();
+  
+  // Butona basıldığında yükleniyor animasyonu göstermek için
+  bool _isLoading = false;
+
+  // Giriş Yapma Fonksiyonu
+  void _login() async {
+    // Eğer alanlar boşsa uyarı ver
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen e-posta ve şifrenizi girin.')),
+      );
+      return;
+    }
+
+    // Yükleniyor durumuna geç
+    setState(() {
+      _isLoading = true;
+    });
+
+    // AuthService üzerinden Firebase'e giriş isteği yolla
+    final user = await _authService.signInWithEmailPassword(
+      _emailController.text.trim(), // trim() boşlukları siler
+      _passwordController.text.trim(),
+    );
+
+    // İşlem bitti, yükleniyor durumundan çık
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (user != null) {
+      // Başarılı giriş
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Giriş Başarılı! Yönlendiriliyorsunuz...')),
+      );
+      
+      // ANA EKRANA YÖNLENDİRME KODU
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context, 
+          MaterialPageRoute(builder: (context) => const HomeScreen()) // Ana ekranının adını buraya yaz!
+        );
+      }
+    } else {
+      // Başarısız giriş
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Giriş başarısız. E-posta veya şifre hatalı.')),
+      );
+    }
+  }
+
+  // Hafıza sızıntılarını önlemek için sayfadan çıkıldığında controller'ları temizle
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +111,12 @@ class LoginScreen extends StatelessWidget {
               
               const SizedBox(height: 40),
               
-              Center(
+              const Center(
                 child: Column(
                   children: [
-                    const Icon(Icons.bolt, color: Color(0xFFF4D06F), size: 55),
-                    const SizedBox(height: 10),
-                    const Text(
+                    Icon(Icons.bolt, color: Color(0xFFF4D06F), size: 55),
+                    SizedBox(height: 10),
+                    Text(
                       'SPARKY', 
                       style: TextStyle(
                         color: Colors.white, 
@@ -75,7 +148,8 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 45),
               
               _buildLabel("EMAIL ADDRESS"),
-              _buildTextField(hint: "name@example.com"),
+              // E-posta controller'ı eklendi
+              _buildTextField(hint: "name@example.com", controller: _emailController),
               
               const SizedBox(height: 25),
               
@@ -92,7 +166,8 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              _buildTextField(hint: "••••••••", isPassword: true),
+              // Şifre controller'ı eklendi
+              _buildTextField(hint: "••••••••", isPassword: true, controller: _passwordController),
 
               const SizedBox(height: 35),
               
@@ -107,18 +182,25 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: _isLoading ? null : _login, // İşlem yapılıyorsa butonu kilitle
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent, 
                     shadowColor: Colors.transparent,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('Login', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 10),
-                      Icon(Icons.arrow_forward_rounded, color: Colors.black, size: 20),
+                      // Eğer yükleniyorsa çark göster, yoksa Login yazısını göster
+                      _isLoading 
+                          ? const SizedBox(
+                              width: 24, 
+                              height: 24, 
+                              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)
+                            )
+                          : const Text('Login', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 10),
+                      if (!_isLoading) const Icon(Icons.arrow_forward_rounded, color: Colors.black, size: 20),
                     ],
                   ),
                 ),
@@ -155,10 +237,9 @@ class LoginScreen extends StatelessWidget {
                   const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
                   GestureDetector(
                     onTap: () {
-                      //sınıf ismi RegisterScreen olarak eşlendi.
                       Navigator.push(
                         context, 
-                        MaterialPageRoute(builder: (context) => RegisterScreen()) 
+                        MaterialPageRoute(builder: (context) => const RegisterScreen()) 
                       );
                     },
                     child: const Text(
@@ -197,7 +278,9 @@ class LoginScreen extends StatelessWidget {
     ),
   );
 
-  Widget _buildTextField({required String hint, bool isPassword = false}) => TextField(
+  // Textfield widget'ına controller parametresi eklendi
+  Widget _buildTextField({required String hint, bool isPassword = false, required TextEditingController controller}) => TextField(
+    controller: controller, // Girdi kutusu bu değişkene bağlandı
     obscureText: isPassword,
     style: const TextStyle(color: Colors.white),
     decoration: InputDecoration(

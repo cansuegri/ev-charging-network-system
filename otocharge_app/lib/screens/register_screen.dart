@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,6 +10,82 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _isAgreed = false;
+  bool _isLoading = false;
+
+  // Girdi kutularını dinleyecek controller'lar
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  final AuthService _authService = AuthService();
+
+  // Kayıt Olma Fonksiyonu
+  void _register() async {
+    // 1. Boş alan kontrolü
+    if (_nameController.text.isEmpty || 
+        _emailController.text.isEmpty || 
+        _passwordController.text.isEmpty || 
+        _confirmPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen tüm alanları doldurun.')),
+      );
+      return;
+    }
+
+    // 2. Şifreler eşleşiyor mu kontrolü
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Şifreler birbiriyle eşleşmiyor!')),
+      );
+      return;
+    }
+
+    // 3. Sözleşme onaylandı mı kontrolü
+    if (!_isAgreed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen kullanım şartlarını kabul edin.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Firebase'e kayıt isteğini gönder
+    final user = await _authService.signUpWithEmailPassword(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (user != null) {
+      // Kayıt başarılıysa kullanıcıyı Login ekranına geri gönder
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kayıt Başarılı! Lütfen giriş yapın.')),
+      );
+      if (context.mounted) {
+        Navigator.pop(context); // Giriş ekranına döner
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kayıt başarısız oldu. E-posta kullanımda olabilir.')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +102,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                // blurRadius boxShadow içine taşındı
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFFF4D06F).withOpacity(0.05),
@@ -60,16 +136,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   const SizedBox(height: 45),
                   _buildLabel("FULL NAME"),
-                  _buildInputField(hint: "Nikola Tesla", icon: Icons.person_outline),
+                  _buildInputField(hint: "Nikola Tesla", icon: Icons.person_outline, controller: _nameController),
                   const SizedBox(height: 25),
                   _buildLabel("EMAIL ADDRESS"),
-                  _buildInputField(hint: "tesla@sparky.ev", icon: Icons.alternate_email),
+                  _buildInputField(hint: "tesla@sparky.ev", icon: Icons.alternate_email, controller: _emailController),
                   const SizedBox(height: 25),
                   _buildLabel("PASSWORD"),
-                  _buildInputField(hint: "••••••••", icon: Icons.lock_outline, isPassword: true),
+                  _buildInputField(hint: "••••••••", icon: Icons.lock_outline, isPassword: true, controller: _passwordController),
                   const SizedBox(height: 25),
                   _buildLabel("CONFIRM PASSWORD"),
-                  _buildInputField(hint: "••••••••", icon: Icons.verified_user_outlined, isPassword: true),
+                  _buildInputField(hint: "••••••••", icon: Icons.verified_user_outlined, isPassword: true, controller: _confirmPasswordController),
                   const SizedBox(height: 30),
                   _buildTermsCheckbox(),
                   const SizedBox(height: 40),
@@ -102,7 +178,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     child: Text(text, style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1.0)),
   );
 
-  Widget _buildInputField({required String hint, required IconData icon, bool isPassword = false}) => TextField(
+  // Controller parametresi eklendi
+  Widget _buildInputField({required String hint, required IconData icon, bool isPassword = false, required TextEditingController controller}) => TextField(
+    controller: controller, // Kutucuk controller'a bağlandı
     obscureText: isPassword,
     style: const TextStyle(color: Colors.white),
     decoration: InputDecoration(
@@ -134,6 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     ],
   );
 
+  // Butona basıldığında _register fonksiyonu tetikleniyor ve yükleme animasyonu çıkıyor
   Widget _buildRegisterButton() => Container(
     height: 60,
     decoration: BoxDecoration(
@@ -141,14 +220,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       gradient: const LinearGradient(colors: [Color(0xFFF4D06F), Color(0xFFEBC76D)]),
     ),
     child: ElevatedButton(
-      onPressed: () {},
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-      child: const Row(
+      onPressed: _isLoading ? null : _register,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.transparent, 
+        shadowColor: Colors.transparent, 
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))
+      ),
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('REGISTER', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-          SizedBox(width: 12),
-          Icon(Icons.arrow_forward_ios_rounded, color: Colors.black, size: 18),
+          _isLoading 
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+            : const Text('REGISTER', style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+          const SizedBox(width: 12),
+          if (!_isLoading) const Icon(Icons.arrow_forward_ios_rounded, color: Colors.black, size: 18),
         ],
       ),
     ),
