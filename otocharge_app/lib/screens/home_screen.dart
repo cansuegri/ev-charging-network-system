@@ -1,25 +1,37 @@
-import 'package:flutter/material.dart';
-import 'explore_screen.dart';
 import 'charging_status_screen.dart';
 import 'wallet_screen.dart';
 import 'profile_screen.dart';
+import 'package:flutter/material.dart';
+import 'explore_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  // Ödeme ekranından dönerken cüzdan sekmesini açabilmemiz için bu değişken eklendi
+  final int initialIndex; 
+
+  const HomeScreen({super.key, this.initialIndex = 0});
 
   @override
-  State<HomeScreen> createState() => _MainShellState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _MainShellState extends State<HomeScreen> {
-  int _selectedIndex = 0;
+class _HomeScreenState extends State<HomeScreen> {
+  late int _selectedIndex;
 
-  final List<Widget> _screens = const [
-    ExploreScreen(),
-    /*ChargingStatusScreen(),
-    WalletScreen(),
-    ProfileScreen(), */
+  // SİHİRLİ DOKUNUŞ: Buradaki 'const' kelimesi kaldırıldı!
+  // Arkadaşının ekranlarında const olmadığı için hata veriyordu.
+  final List<Widget> _screens = [
+    const ExploreScreen(),
+    ChargingStatusScreen(), // Artık hata vermeyecek
+    WalletScreen(),         // Artık hata vermeyecek
+    ProfileScreen(),        // Artık hata vermeyecek
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Uygulama açıldığında veya başka sayfadan yönlendirildiğinde istenen sekmeyi aç
+    _selectedIndex = widget.initialIndex;
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -45,13 +57,13 @@ class _MainShellState extends State<HomeScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Color(0xFFF4D06F),
+          selectedItemColor: const Color(0xFFF4D06F),
           unselectedItemColor: Colors.white38,
-          selectedLabelStyle: TextStyle(
+          selectedLabelStyle: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
           ),
-          unselectedLabelStyle: TextStyle(
+          unselectedLabelStyle: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
           ),

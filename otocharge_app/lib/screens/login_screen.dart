@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:otocharge_app/screens/home_screen.dart';
+import 'home_screen.dart'; 
 import 'welcome_screen.dart'; 
 import 'register_screen.dart';
 import '../services/auth_service.dart';
-import 'explore_screen.dart';
 
+// Controller ve Yüklenme durumu kullanacağımız için StatefulWidget olmak zorunda
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -13,64 +13,86 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Kullanıcının yazdığı metinleri tutacak değişkenler (Controller)
+  // Kullanıcının yazdığı metinleri tutacak değişkenler
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   
-  // Firebase işlemlerini yapacak servisimiz
+  // Firebase işlemleri
   final AuthService _authService = AuthService();
   
-  // Butona basıldığında yükleniyor animasyonu göstermek için
+  // Yükleniyor animasyonu kontrolü
   bool _isLoading = false;
 
-  // Giriş Yapma Fonksiyonu
-  void _login() async {
-    // Eğer alanlar boşsa uyarı ver
+  // --- GÜVENLİ FİREBASE GİRİŞ FONKSİYONU ---
+  Future<void> _login() async {
+    // 1. Boş alan kontrolü
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen e-posta ve şifrenizi girin.')),
+        const SnackBar(
+          content: Text('Please enter your email and password.'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
 
-    // Yükleniyor durumuna geç
+    // 2. Yüklenme simgesini başlat
     setState(() {
       _isLoading = true;
     });
 
-    // AuthService üzerinden Firebase'e giriş isteği yolla
-    final user = await _authService.signInWithEmailPassword(
-      _emailController.text.trim(), // trim() boşlukları siler
-      _passwordController.text.trim(),
-    );
-
-    // İşlem bitti, yükleniyor durumundan çık
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (user != null) {
-      // Başarılı giriş
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Giriş Başarılı! Yönlendiriliyorsunuz...')),
+    try {
+      // 3. Firebase'e giriş isteği yolla
+      final user = await _authService.signInWithEmailPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
-      
-      // ANA EKRANA YÖNLENDİRME KODU
-      if (context.mounted) {
-        Navigator.pushReplacement(
-          context, 
-          MaterialPageRoute(builder: (context) => const HomeScreen()) // Ana ekranının adını buraya yaz!
+
+      // Sayfa hala açık mı kontrolü (Güvenlik)
+      if (!mounted) return;
+
+      if (user != null) {
+        // 4. Giriş Başarılı - Ana Sayfaya Yönlendir
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login Successful!'),
+            backgroundColor: Color(0xFF2F8F5B),
+          ),
+        );
+        
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false, // Geri tuşuna basınca logine dönmesin diye geçmişi siliyoruz
+        );
+      } else {
+        // 5. Giriş Başarısız (Yanlış şifre vb.)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed. Invalid email or password.'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
-    } else {
-      // Başarısız giriş
+    } catch (e) {
+      // Beklenmeyen bir hata olursa sonsuz döngüye girmemesi için hata yakalama
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Giriş başarısız. E-posta veya şifre hatalı.')),
+        const SnackBar(
+          content: Text('An error occurred during login.'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
+    } finally {
+      // 6. İşlem ne olursa olsun (başarılı veya hatalı) yüklenme simgesini DURDUR!
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  // Hafıza sızıntılarını önlemek için sayfadan çıkıldığında controller'ları temizle
   @override
   void dispose() {
     _emailController.dispose();
@@ -148,7 +170,6 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 45),
               
               _buildLabel("EMAIL ADDRESS"),
-              // E-posta controller'ı eklendi
               _buildTextField(hint: "name@example.com", controller: _emailController),
               
               const SizedBox(height: 25),
@@ -166,7 +187,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-              // Şifre controller'ı eklendi
               _buildTextField(hint: "••••••••", isPassword: true, controller: _passwordController),
 
               const SizedBox(height: 35),
@@ -182,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login, // İşlem yapılıyorsa butonu kilitle
+                  onPressed: _isLoading ? null : _login, // Yüklenirken butona tekrar basılmasını engeller
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent, 
                     shadowColor: Colors.transparent,
@@ -191,12 +211,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Eğer yükleniyorsa çark göster, yoksa Login yazısını göster
                       _isLoading 
                           ? const SizedBox(
                               width: 24, 
                               height: 24, 
-                              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)
+                              child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2.5)
                             )
                           : const Text('Login', style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(width: 10),
@@ -278,9 +297,8 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   );
 
-  // Textfield widget'ına controller parametresi eklendi
   Widget _buildTextField({required String hint, bool isPassword = false, required TextEditingController controller}) => TextField(
-    controller: controller, // Girdi kutusu bu değişkene bağlandı
+    controller: controller, // Firebase'in verileri okuyabilmesi için zorunlu
     obscureText: isPassword,
     style: const TextStyle(color: Colors.white),
     decoration: InputDecoration(

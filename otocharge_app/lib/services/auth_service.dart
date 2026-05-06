@@ -6,10 +6,12 @@ class AuthService {
   // 1. KAYIT OL (REGISTER)
   Future<User?> signUpWithEmailPassword(String email, String password) async {
     try {
+      // 10 saniye içinde cevap gelmezse işlemi hata (timeout) olarak keser!
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 10));
+      
       return userCredential.user;
     } catch (e) {
       print("Kayıt olurken hata oluştu: $e");
@@ -20,10 +22,12 @@ class AuthService {
   // 2. GİRİŞ YAP (LOGIN)
   Future<User?> signInWithEmailPassword(String email, String password) async {
     try {
+      // İnternet koparsa sonsuz dönmesini engellemek için timeout eklendi
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 10));
+      
       return userCredential.user;
     } catch (e) {
       print("Giriş yaparken hata oluştu: $e");
