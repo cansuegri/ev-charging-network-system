@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase verilerini okumak için
+import 'package:firebase_auth/firebase_auth.dart';    // Kullanıcı UID'sini almak için
 import '../states/wallet_state.dart';
 
 class WalletScreen extends StatelessWidget {
@@ -27,49 +29,78 @@ class WalletScreen extends StatelessWidget {
                   const SizedBox(height: 30),
                   _buildSectionHeader(),
                   const SizedBox(height: 14),
-                  _transactionTile(
-                    title: 'Charging Payment',
-                    subtitle: 'North Star Hub • Just now',
-                    amount: '-\$12.45',
-                    status: 'PAID',
-                    icon: Icons.ev_station,
-                    isIncome: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _transactionTile(
-                    title: 'Downtown Supercharger',
-                    subtitle: 'May 24, 2024 • 42 min',
-                    amount: '-\$32.40',
-                    status: 'USED',
-                    icon: Icons.ev_station,
-                    isIncome: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _transactionTile(
-                    title: 'Airport Rapid Port',
-                    subtitle: 'May 21, 2024 • 18 min',
-                    amount: '-\$12.85',
-                    status: 'USED',
-                    icon: Icons.ev_station,
-                    isIncome: false,
-                  ),
-                  const SizedBox(height: 12),
-                  _transactionTile(
-                    title: 'Top Up • Visa',
-                    subtitle: 'May 19, 2024 • 09:12 AM',
-                    amount: '+\$200.00',
-                    status: 'COMPLETED',
-                    icon: Icons.credit_card,
-                    isIncome: true,
-                  ),
-                  const SizedBox(height: 12),
-                  _transactionTile(
-                    title: 'Greenway Plaza',
-                    subtitle: 'May 15, 2024 • 55 min',
-                    amount: '-\$45.10',
-                    status: 'USED',
-                    icon: Icons.ev_station,
-                    isIncome: false,
+                  
+                  // FİREBASE CANLI İŞLEM GEÇMİŞİ (Sahte veriler yerine bu eklendi)
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('Sessions')
+                        .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      // 1. Veriler yüklenirken çark göster
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(20.0),
+                            child: CircularProgressIndicator(color: Color(0xFFF4D06F)),
+                          ),
+                        );
+                      }
+
+                      // 2. İşlem geçmişi yoksa mesaj göster
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(30.0),
+                            child: Text(
+                              'Henüz bir işlem bulunmuyor.',
+                              style: TextStyle(color: Colors.white54, fontSize: 14),
+                            ),
+                          ),
+                        );
+                      }
+
+                      // 3. Verileri tarihe göre yeniden eskiye sırala
+                      final docs = snapshot.data!.docs.toList();
+                      docs.sort((a, b) {
+                        final aTime = (a.data() as Map<String, dynamic>)['date'] as Timestamp?;
+                        final bTime = (b.data() as Map<String, dynamic>)['date'] as Timestamp?;
+                        if (aTime == null || bTime == null) return 0;
+                        return bTime.compareTo(aTime); // En yeni en üstte
+                      });
+
+                      // 4. Verileri listele
+                      return Column(
+                        children: docs.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          
+                          // Verileri güvenli çekme
+                          final double amount = (data['amount'] ?? 0.0).toDouble();
+                          final bool isIncome = data['isIncome'] ?? false;
+                          final String stationName = data['stationName'] ?? 'Unknown Station';
+                          final String status = data['status'] ?? 'COMPLETED';
+                          
+                          // Tarihi düzgün bir formata sokma
+                          String timeString = 'Just now';
+                          if (data['date'] != null) {
+                            final date = (data['date'] as Timestamp).toDate();
+                            timeString = '${date.day}/${date.month}/${date.year} • ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _transactionTile(
+                              title: stationName,
+                              subtitle: timeString,
+                              amount: isIncome ? '+\$${amount.toStringAsFixed(2)}' : '-\$${amount.toStringAsFixed(2)}',
+                              status: status,
+                              icon: isIncome ? Icons.account_balance_wallet : Icons.ev_station,
+                              isIncome: isIncome,
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                 ],
               ),

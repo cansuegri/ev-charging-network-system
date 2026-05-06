@@ -34,7 +34,6 @@ class WalletState extends ChangeNotifier {
     print("📡 LOG: Firestore dinleyicisi başlatılıyor... Hedef UID: $uid");
     _balanceSubscription?.cancel();
 
-    // SİHİRLİ DOKUNUŞ: 'users' yerine 'Users' yaptık!
     _balanceSubscription = FirebaseFirestore.instance
         .collection('Users') 
         .doc(uid)
@@ -68,19 +67,31 @@ class WalletState extends ChangeNotifier {
 
   Future<bool> pay(double amount) async {
     if (selectedMethod == PaymentMethod.wallet && balance < amount) {
-      return false;
+      return false; // Bakiye yetersizse işlemi durdur
     }
 
     if (selectedMethod == PaymentMethod.wallet) {
       try {
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
+          // 1. Bakiyeyi düşür
           await FirebaseFirestore.instance
               .collection('Users')
               .doc(user.uid)
               .update({
             'balance': FieldValue.increment(-amount),
           });
+
+          // 2. SİHİRLİ DOKUNUŞ: Firebase'e işlemi (fişi) kaydet!
+          await FirebaseFirestore.instance.collection('Sessions').add({
+            'userId': user.uid, // Bu işlem kime ait? (Yabancı Anahtar)
+            'stationName': 'North Star Hub', // Şarj istasyonu adı
+            'amount': amount,
+            'date': FieldValue.serverTimestamp(), // Firebase sunucusunun anlık saati
+            'status': 'PAID', // İşlem durumu
+            'isIncome': false, // Gider olduğu için false
+          });
+
           return true; 
         }
       } catch (e) {

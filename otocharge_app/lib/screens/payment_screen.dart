@@ -11,39 +11,64 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   static const double sessionCost = 12.45;
+  bool _isProcessing = false; // Çift tıklamayı önlemek için yüklenme durumu
 
-  // --- FIREBASE İÇİN ASENKRON (ASYNC) HALE GETİRİLDİ ---
+  // --- GÜNCEL ASENKRON ÖDEME FONKSİYONU ---
   Future<void> _payNow() async {
-    // İşlemin Firebase'de bitmesini 'await' ile bekliyoruz
-    final success = await walletState.pay(sessionCost);
+    if (_isProcessing) return;
 
-    // Veritabanından cevap gelene kadar kullanıcı sayfayı kapatırsa çökmesin diye güvenlik kontrolü
-    if (!mounted) return;
+    setState(() {
+      _isProcessing = true;
+    });
 
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Insufficient wallet balance.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
+    try {
+      // WalletState içindeki pay fonksiyonunu çağırıyoruz
+      // Bu fonksiyon hem Users bakiyesini düşürür hem de Sessions koleksiyonuna kayıt ekler
+      final success = await walletState.pay(sessionCost);
+
+      if (!mounted) return;
+
+      if (success) {
+        // Ödeme başarılı
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment completed successfully!'),
+            backgroundColor: Color(0xFF2F8F5B),
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        // Kullanıcıyı Cüzdan sekmesine (index: 2) yönlendiriyoruz
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const HomeScreen(initialIndex: 2),
+          ),
+          (route) => false,
+        );
+      } else {
+        // Bakiye yetersiz veya işlem başarısız
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Insufficient wallet balance or transaction error.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } catch (e) {
+      // Beklenmedik bir hata (internet kopması vb.)
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e'), backgroundColor: Colors.orange),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Payment completed successfully.'),
-        backgroundColor: Color(0xFF2F8F5B),
-      ),
-    );
-
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const HomeScreen(initialIndex: 2),
-      ),
-      (route) => false,
-    );
   }
 
   @override
@@ -104,9 +129,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   _methodTile(
                     method: PaymentMethod.wallet,
                     title: 'Sparky Wallet',
-                    // Bakiye anlık olarak Firebase'den gelecek!
-                    subtitle:
-                        'Balance: \$${walletState.balance.toStringAsFixed(2)}',
+                    subtitle: 'Balance: \$${walletState.balance.toStringAsFixed(2)}',
                     icon: Icons.account_balance_wallet,
                   ),
                   const SizedBox(height: 12),
@@ -123,21 +146,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     width: double.infinity,
                     height: 58,
                     child: ElevatedButton(
-                      onPressed: _payNow, // Güncellediğimiz asenkron fonksiyon
+                      // İşlem sürerken butonu pasif yapıyoruz
+                      onPressed: _isProcessing ? null : _payNow, 
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF4D06F),
+                        disabledBackgroundColor: Colors.grey[800],
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(18),
                         ),
                       ),
-                      child: const Text(
-                        'PAY NOW',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1,
-                        ),
-                      ),
+                      child: _isProcessing 
+                        ? const SizedBox(
+                            width: 24, 
+                            height: 24, 
+                            child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)
+                          )
+                        : const Text(
+                            'PAY NOW',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
                     ),
                   ),
                 ],
@@ -157,7 +188,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           Text(
             label,
             style: TextStyle(
-              color: isTotal ? Colors.white : Colors.white,
+              color: Colors.white,
               fontSize: isTotal ? 18 : 15,
               fontWeight: isTotal ? FontWeight.w900 : FontWeight.w600,
             ),
