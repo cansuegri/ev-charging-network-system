@@ -1,4 +1,4 @@
-enum SocketStatus { AVAILABLE, OCCUPIED, RESERVED, FAULTY }
+enum SocketStatus { avaible, occupied, reserves, faulty }
 
 abstract class IObserver {
   void update(String message);
