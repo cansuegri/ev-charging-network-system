@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'station_detail_screen.dart';
 
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({super.key});
@@ -195,12 +196,12 @@ class ExploreScreen extends StatelessWidget {
         String price = stationData['price']?.toString() ?? '0.0';
         bool isAvailable = stationData['isAvailable'] ?? false;
 
-        return _buildNearestStationCard(name, address, speed, price, isAvailable);
+        return _buildNearestStationCard(context, name, address, speed, price, isAvailable);
       },
     );
   }
 
-  Widget _buildNearestStationCard(String name, String address, String speed, String price, bool isAvailable) {
+  Widget _buildNearestStationCard(BuildContext context ,String name, String address, String speed, String price, bool isAvailable) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -275,7 +276,12 @@ class ExploreScreen extends StatelessWidget {
             height: 56,
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () {
+            Navigator.push(
+             context,
+          MaterialPageRoute(builder: (_) => const StationDetailScreen()),
+         ); 
+             },
               icon: const Icon(Icons.navigation_rounded, color: Colors.black),
               label: const Text(
                 'START NAVIGATION',
